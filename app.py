@@ -1,7 +1,6 @@
 from flask import Flask, request, render_template, send_file, jsonify, Response
 import cv2
 import numpy as np
-import os
 from io import BytesIO
 from PIL import Image
 import easyocr
@@ -61,16 +60,26 @@ def upload_image():
     # Enhance the image
     upscaled_image, thresh_image = enhance_image(image)
 
+    # Save the original image in-memory
+    original_image_io = BytesIO()
+    Image.fromarray(image).save(original_image_io, format='PNG')
+    original_image_io.seek(0)
+    original_image_base64 = base64.b64encode(original_image_io.getvalue()).decode('utf-8')
+
     # Save the enhanced image in-memory
     enhanced_image_io = BytesIO()
     Image.fromarray(thresh_image).save(enhanced_image_io, format='PNG')
     enhanced_image_io.seek(0)
+    enhanced_image_base64 = base64.b64encode(enhanced_image_io.getvalue()).decode('utf-8')
 
     # Store the enhanced image in a global variable to be accessed by the OCR endpoint
     global enhanced_image
     enhanced_image = thresh_image
 
-    return send_file(enhanced_image_io, mimetype='image/png')
+    return jsonify({
+        "original_image": original_image_base64,
+        "enhanced_image": enhanced_image_base64
+    })
 
 @app.route('/ocr-progress', methods=['GET'])
 def ocr_progress():

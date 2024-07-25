@@ -1,22 +1,22 @@
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: #f4f4f9;
+    background-color: #1e1e1e;
     margin: 0;
     padding: 0;
     display: flex;
     justify-content: center;
     align-items: center;
     height: 100vh;
-    color: #333;
+    color: #f4f4f9;
 }
 
 .container {
-    max-width: 600px;
+    max-width: 100%;
     width: 100%;
-    background-color: #fff;
+    background-color: #2d2d2d;
     padding: 30px;
     border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
     text-align: center;
     overflow-y: auto;
     max-height: 90vh;
@@ -35,10 +35,12 @@ h1 {
     cursor: pointer;
     transition: background-color 0.3s, border-color 0.3s;
     position: relative;
+    max-width: 800px; /* Set a max-width for the dotted line */
+    margin: 0 auto; /* Center the element */
 }
 
 .upload-area.dragover {
-    background-color: #f0f7ff;
+    background-color: #3a3a3a;
     border-color: #2c6cad;
 }
 
@@ -86,7 +88,17 @@ h1 {
 }
 
 .output-container {
+    display: flex;
+    justify-content: space-around;
     margin-top: 20px;
+}
+
+.image-container {
+    max-width: 45%;
+}
+
+.text-container {
+    width: 45%;
 }
 
 p {
@@ -99,7 +111,7 @@ p {
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(255, 255, 255, 0.8);
+    background: rgba(0, 0, 0, 0.8);
     display: none;
     justify-content: center;
     align-items: center;
@@ -107,7 +119,7 @@ p {
 }
 
 .spinner {
-    border: 4px solid rgba(0, 0, 0, 0.1);
+    border: 4px solid rgba(255, 255, 255, 0.325);
     border-left-color: #4a90e2;
     border-radius: 50%;
     width: 50px;
@@ -122,7 +134,7 @@ p {
 }
 
 #retry-button {
-    background-color: #e24a4a;
+    background-color: #b01414;
     color: #fff;
     border: none;
     padding: 10px 20px;
@@ -133,7 +145,7 @@ p {
 }
 
 #detect-text-button {
-    background-color: #4ae24a;
+    background-color: #00d200;
     color: #fff;
     border: none;
     padding: 10px 20px;
@@ -144,19 +156,21 @@ p {
 }
 
 #detect-text-button:hover {
-    background-color: #2cad2c;
+    background-color: #118311;
 }
 
 #retry-button:hover {
-    background-color: #ad2c2c;
+    background-color: #780f0f;
 }
 
 textarea {
     width: 100%;
-    height: 100px;
+    height: 300px;  /* Increased height */
     margin-top: 10px;
     border-radius: 5px;
-    border: 1px solid #ccc;
+    border: 1px solid #444;
+    background-color: #ffffff;
+    color: #000000;
     padding: 10px;
     resize: none;
     font-size: 14px;
@@ -169,7 +183,7 @@ textarea {
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(255, 255, 255, 0.8);
+    background: rgba(0, 0, 0, 0.8);
     display: none;
     justify-content: center;
     align-items: center;
@@ -178,7 +192,7 @@ textarea {
 
 .progress-container {
     width: 80%;
-    background-color: #e0e0e0;
+    background-color: #444;
     border-radius: 10px;
     overflow: hidden;
     margin-top: 20px;

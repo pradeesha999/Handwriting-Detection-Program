@@ -76,15 +76,21 @@
                 method: 'POST',
                 body: formData
             })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error("File upload failed");
-                }
-                return response.blob();
-            })
-            .then(blob => {
-                const url = URL.createObjectURL(blob);
-                output.innerHTML = `<div class="output-container"><img src="${url}" alt="Enhanced Image"><a href="${url}" download="enhanced_image.png">Download</a></div>
+            .then(response => response.json())
+            .then(data => {
+                const originalImageUrl = 'data:image/png;base64,' + data.original_image;
+                const enhancedImageUrl = 'data:image/png;base64,' + data.enhanced_image;
+                output.innerHTML = `<div class="output-container">
+                                        <div class="image-container">
+                                            <h3>Original Image</h3>
+                                            <img src="${originalImageUrl}" alt="Original Image">
+                                        </div>
+                                        <div class="image-container">
+                                            <h3>Enhanced Image</h3>
+                                            <img src="${enhancedImageUrl}" alt="Enhanced Image">
+                                            <a href="${enhancedImageUrl}" download="enhanced_image.png">Download</a>
+                                        </div>
+                                    </div>
                                     <button id="detect-text-button">Detect Text</button>
                                     <button id="retry-button">Retry</button>`;
                 loadingOverlay.style.display = 'none';  // Hide loading overlay
@@ -106,53 +112,61 @@
         }
 
         function detectText() {
-    progressOverlay.style.display = 'flex';  // Show progress overlay
-    progressBar.style.width = '0%';
-    
-    // Clear previous progress events
-    if (window.eventSource) {
-        window.eventSource.close();
-    }
+            progressOverlay.style.display = 'flex';  // Show progress overlay
+            progressBar.style.width = '0%';
+            
+            // Clear previous progress events
+            if (window.eventSource) {
+                window.eventSource.close();
+            }
 
-    window.eventSource = new EventSource('/ocr-progress');
+            window.eventSource = new EventSource('/ocr-progress');
 
-    window.eventSource.onmessage = function (event) {
-        const progress = parseInt(event.data);
-        progressBar.style.width = progress + '%';
-        if (progress === 100) {
-            window.eventSource.close();
-            fetch('/ocr', {
-                method: 'POST'
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.error) {
-                    throw new Error(data.error);
+            window.eventSource.onmessage = function (event) {
+                const progress = parseInt(event.data);
+                progressBar.style.width = progress + '%';
+                if (progress === 100) {
+                    window.eventSource.close();
+                    fetch('/ocr', {
+                        method: 'POST'
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.error) {
+                            throw new Error(data.error);
+                        }
+                        const annotatedImageUrl = 'data:image/png;base64,' + data.annotated_image;
+                        output.innerHTML += `<div class="output-container">
+                                                <div class="text-container">
+                                                    <h3>Detected Text:</h3>
+                                                    <textarea readonly>${data.text}</textarea>
+                                                </div>
+                                                <div class="image-container">
+                                                    <img src="${annotatedImageUrl}" alt="Annotated Image">
+                                                </div>
+                                            </div>`;
+                        progressOverlay.style.display = 'none';  // Hide progress overlay
+                        // Add the retry button event listener here to ensure it works after text detection
+                        document.getElementById('retry-button').addEventListener('click', () => {
+                            output.innerHTML = '';
+                            uploadArea.style.display = 'block';
+                            progressOverlay.style.display = 'none';  // Hide progress overlay
+                        });
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        output.innerHTML += `<p style="color: red;">${error.message}</p>`;
+                        progressOverlay.style.display = 'none';  // Hide progress overlay
+                    });
                 }
-                const annotatedImageUrl = 'data:image/png;base64,' + data.annotated_image;
-                output.innerHTML += `<div class="output-container"><h3>Detected Text:</h3><textarea readonly>${data.text}</textarea><img src="${annotatedImageUrl}" alt="Annotated Image"></div>`;
-                progressOverlay.style.display = 'none';  // Hide progress overlay
-                // Add the retry button event listener here to ensure it works after text detection
-                document.getElementById('retry-button').addEventListener('click', () => {
-                    output.innerHTML = '';
-                    uploadArea.style.display = 'block';
-                    progressOverlay.style.display = 'none';  // Hide progress overlay
-                });
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                output.innerHTML += `<p style="color: red;">${error.message}</p>`;
-                progressOverlay.style.display = 'none';  // Hide progress overlay
-            });
-        }
-    };
+            };
 
-    window.eventSource.onerror = function () {
-        window.eventSource.close();
-        output.innerHTML += `<p style="color: red;">Error occurred during OCR process</p>`;
-        progressOverlay.style.display = 'none';  // Hide progress overlay
-    };
-}
+            window.eventSource.onerror = function () {
+                window.eventSource.close();
+                output.innerHTML += `<p style="color: red;">Error occurred during OCR process</p>`;
+                progressOverlay.style.display = 'none';  // Hide progress overlay
+            };
+        }
     </script>
 </body>
 </html>
