@@ -11,8 +11,14 @@ import base64
 app = Flask(__name__, static_folder='static')
 
 def enhance_image(image):
-    # Denoise the image
-    denoised_image = cv2.fastNlMeansDenoisingColored(image, None, 5, 5, 7, 21)
+    # Correct image angle
+    straight_image = straightenImage(image)
+
+    # Convert to grayscale
+    gray_image = cv2.cvtColor(straight_image, cv2.COLOR_BGR2GRAY)
+
+    # Denoise the grayscale image
+    denoised_image = cv2.fastNlMeansDenoising(gray_image, None, h=10, templateWindowSize=7, searchWindowSize=21)
 
     # Upscale the image
     scale_factor = 2
@@ -20,15 +26,37 @@ def enhance_image(image):
     height = int(denoised_image.shape[0] * scale_factor)
     upscaled_image = cv2.resize(denoised_image, (width, height), interpolation=cv2.INTER_CUBIC)
 
-    # Convert to grayscale
-    gray_image = cv2.cvtColor(denoised_image, cv2.COLOR_BGR2GRAY)
-
     # Apply adaptive thresholding
     block_size = 19  # Use an odd number greater than 1
     C_value = 3
-    thresh_image = cv2.adaptiveThreshold(gray_image, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, block_size, C_value)
+    thresh_image = cv2.adaptiveThreshold(upscaled_image, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, block_size, C_value)
 
-    return upscaled_image, thresh_image
+    return denoised_image, thresh_image
+
+def straightenImage(image):
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    edges = cv2.Canny(gray, 50, 150, apertureSize=3)
+    lines = cv2.HoughLinesP(edges, 1, np.pi / 180, threshold=100, minLineLength=100, maxLineGap=10)
+    angles = []
+    for line in lines:
+        x1, y1, x2, y2 = line[0]
+        angle = np.arctan2(y2 - y1, x2 - x1)
+        angles.append(angle)
+
+    median_angle = np.median(angles)
+
+    def rotate_image(image, angle):
+        (h, w) = image.shape[:2]
+        center = (w // 2, h // 2)
+        M = cv2.getRotationMatrix2D(center, angle, 1.0)
+        rotated = cv2.warpAffine(image, M, (w, h), flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_REPLICATE)
+        return rotated
+    
+    angle_degrees = median_angle * (180 / np.pi)
+    corrected_image = rotate_image(image, angle_degrees)
+    return corrected_image
+
+
 
 def perform_ocr(image, progress_callback):
     reader = easyocr.Reader(['en'])
